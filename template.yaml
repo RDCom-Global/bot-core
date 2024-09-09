@@ -1,0 +1,38 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  bot-core
+  Sample SAM Template for bot-core
+
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+  MyApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Cors:
+        AllowHeaders: '''*'''
+        AllowOrigin: '''*'''
+        AllowCredentials: '''*'''
+        AllowMethods: '''*'''
+
+  BotCore:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: handler_function/
+      Handler: app.lambda_handler
+      Runtime: python3.11
+      Layers:
+        - arn:aws:lambda:us-east-1:293854028872:layer:layer_postgre_prod:1
+      Architectures:
+        - x86_64
+      Events:
+        BotCore:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            RestApiId: !Ref MyApi
+            Path: /bot_core
+            Method: post
