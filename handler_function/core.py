@@ -156,29 +156,22 @@ def get_subcategories(cat, list_pat = None):
             return rows
     return None
 
-# def get_subcategories(cat):
-#     query = "select cat_id, name from public.categories where cat_id in " + \
-#                 "(select cat_id_2 from public.categories_categories where cat_id_1  = '" + cat + "') order by 2"
-#     print("query subcats",query)
-#     rows = readDB(query)
+def get_sympthoms_names(list_sym):
+    try:
+        elementos = [f"'{item[0]}'" for item in reversed(list_sym)]
+        total_sym = ','.join(elementos)
 
-#     if len(rows) > 0:
-#         return rows
-    
-#     return None
+        query = "select name from public.symptoms where sym_id in (" + total_sym + ")"
+        print("get sym",query)
 
-#  def get_subcategories_from_cats_and_pats(cat, list_pat):
-#     query = "select cat_id, name from public.categories where cat_id in " + \
-#                 "(select cat_id_2 from public.categories_categories where cat_id_1  = '" + cat + "') and cat_id in " + \
-#                 "(select cat_id from public.pathologies_categories where pat_id in (" + list2query(list_pat) + ")) order by 2"
-                
-#     print("query subcats",query)
-#     rows = readDB(query)
+        list_names = readDB(query)
 
-#     if len(rows) > 0:
-#         return rows
-    
-#     return None
+        if len(list_names) > 0:
+            print(list_names)
+            return list_names
+        
+    except:
+        return None
 
 def get_sympthoms(list_pat, list_subcat):
 
@@ -227,9 +220,9 @@ def get_pat(list_cat,list_subcat,list_sym,list_pat):
 
 
     if list_subcat != None:
-        for subcat in list_subcat[0]:
-            print("sub cat",subcat)
-            list_total.append(subcat)
+        for subcat in list_subcat:
+            print("sub cat",subcat[0])
+            list_total.append(subcat[0])
     
     print("list total",list_total)
     query_cat = ""
@@ -250,9 +243,9 @@ def get_pat(list_cat,list_subcat,list_sym,list_pat):
             print("list sym",list_sym)
 
             list_sym_final = []
-            for sym in list_sym[0]:
-                list_sym_final.append(sym)
-
+            for sym in list_sym:
+                list_sym_final.append(sym[0])
+            print("list sym total", list_sym_final)
             if len(list_sym_final) > 1:
                 for i in range(len(list_sym_final) - 1):
                     query_sym += "select distinct pat_id from public.pathologies_symptoms where sym_id = '" + list_sym_final[i] + "' and pat_id in ("
@@ -273,9 +266,10 @@ def get_pat(list_cat,list_subcat,list_sym,list_pat):
         if len(list_pat) >= 1:
             query_text += "and pat_id in ("+ list2query(list_pat) +")"
     print(query_text)
+    query_text += " order by name"
 
     # Busco y devuelvo la consulta
-    list_pat = readDB(query_text)
+    list_pat = readDB(query_text)   
     if len(list_pat) > 0:
         print("list pat", list_pat)
         return list_pat
@@ -407,11 +401,16 @@ def get_options_for_text(text):
     except:
         return None
     
-def show_data(data,data2show):
-    response = "Las patologías que detectamos que contienen los síntomas indicados son:<br><br>"
+def show_data(data,data2show,sym):
+    response = "Los síntomas seleccionados son: <br>"
+    list_sym = get_sympthoms_names(sym)
+    for sym in list_sym:
+        response += "<b>. " + sym[0] + "</b><br>"
+
+    response += "<br>Por lo tanto su condición se podría asociar a alguna de las siguientes patologías:<br>"
     if data2show == "pat":
         for x in data["pat"]:
-            response += ". " + x[1] + "<br>"
+            response += "<b>. " + x[1] + "</b><br>"
     return response
 
 def sort_cats(list_cat):
@@ -588,10 +587,10 @@ def middle_question(text, token, language):
 
         if response_saved["show_data"] == "true":
             if selected_options[0] in list_of_yesoptions:
-                response = show_data(response_saved["data"],response_saved["data_2_show"])
-                response += "<br>Desea ingresar otro síntoma? (SI/NO)"
+                response = show_data(response_saved["data"],response_saved["data_2_show"],response_saved["data"]["sym"])
+                response += "<br>Desea ingresar otro síntoma? (Si/No)"
             else:
-                response = "Desea ingresar otro síntoma? (SI/NO)"
+                response = "Desea ingresar otro síntoma? (Si/No)"
             query = { "user_id": token}
             update = {"$set": {"show_data": "moredata", "data_2_show": ""}}
             result = collection.update_one(query, update)
@@ -603,7 +602,9 @@ def middle_question(text, token, language):
                 list_cats = response_saved["data"]["cat"]
                 actual_cat_position = response_saved["data"]["next_cat"]
                 if actual_cat_position > len(list_cats)-1:
-                    return "Ya no hay más sistemas seleccionados inicialmente. Muchas gracias por haber utilizado el RDiBot"
+                    responseText = "Ya no hay más sistemas seleccionados inicialmente.|"
+                    responseText += "Le sugerimos que ingrese a la plataforma RDiCManager, de acceso gratuito, en <b>https://rdcom.app</b> para continuar el seguimiento de su paciente.<br><br>Lo invitamos a compartir su código de acceso con otros profesionales para asistirlos en sus diagnósticos de enfermedades raras.<br><br>Espero haberle ayudado en su orientación diagnóstica. Muchas gracias por haber utilizado el <b>RDiBot</b>, que termine bien su día"
+                    return responseText
                 
                 actual_cat = list_cats[actual_cat_position]
 
@@ -620,7 +621,7 @@ def middle_question(text, token, language):
                 ##Agrego nombre de la cateogira que voy a mostrar
               
                 response = get_complete_question("pregunta2", language)
-                response += "<br> <br>" + get_name_cat(actual_cat) + "<br>"
+                response += "<br><br><b>" + get_name_cat(actual_cat) + "</b><br>"
             
                 ques_options = []
                 question = {"question_id": "pregunta2", "options": ques_options}
@@ -639,7 +640,7 @@ def middle_question(text, token, language):
                 update = {"$set": {"last_question": "pregunta2"}}
                 result = collection.update_one(query, update)                           
             else:
-                response = "Muchas gracias por haber utilizado el RDiBot"
+                response = "Le sugerimos que ingrese a la plataforma RDiCManager, de acceso gratuito, en <b>https://rdcom.app</b> para continuar el seguimiento de su paciente.<br><br>Lo invitamos a compartir su código de acceso con otros profesionales para asistirlos en sus diagnósticos de enfermedades raras.<br><br>Espero haberle ayudado en su orientación diagnóstica. Muchas gracias por haber utilizado el <b>RDiBot</b>, que termine bien su día"
             query = { "user_id": token}
             update = {"$set": {"show_data": "false", "data_2_show": ""}}
             result = collection.update_one(query, update)
@@ -675,12 +676,12 @@ def middle_question(text, token, language):
             query = {"user_id": token}
             update = {"$set": {f"data.pat": list_pat}}
             result = collection.update_one(query, update)
-            response = "La cantidad de patologias que quedan filtradas son {}, continuaremos con las consultas para reducir la búsqueda.<br>".format(len(list_pat))
+            response = "La cantidad de patologias que quedan filtradas son <b>{}</b>, continuaremos con las consultas para reducir la búsqueda.<br>".format(len(list_pat))
 
             # Busco las sub cat de la cat seleciconada y preparo la pregunta para usuario
             list_subcats = get_subcategories(list_cats[0])
             response += get_complete_question("pregunta2", language)
-            response += "<br> <br>" + get_name_cat(list_cats[0]) + "<br>"
+            response += "<br><br><b>" + get_name_cat(list_cats[0]) + "</b><br>"
 
             try: 
                 ques_options = []
@@ -733,7 +734,7 @@ def middle_question(text, token, language):
             query = {"user_id": token}
             update = {"$set": {f"data.pat": list_pat}}
             result = collection.update_one(query, update)
-            response = "La cantidad de patologias que quedan filtradas son {}, continuaremos con las consultas para reducir la búsqueda.<br>".format(len(list_pat))
+            response = "La cantidad de patologias que quedan filtradas son <b>{}</b>, continuaremos con las consultas para reducir la búsqueda.<br>".format(len(list_pat))
    
             # Busco los síntomas de la cat seleciconada y preparo la pregunta para usuario
             print("llego a buscar sintomas")
@@ -790,7 +791,7 @@ def middle_question(text, token, language):
             query = {"user_id": token}
             update = {"$set": {f"data.pat": list_pat}}
             result = collection.update_one(query, update)
-            response = "La cantidad de patologias que quedan filtradas son {}.<br>".format(len(list_pat))
+            response = "La cantidad de patologias que quedan filtradas son <b>{}</b>.<br>".format(len(list_pat))
             response += "<br>Desea ver los datos? (SI/NO)"
 
             #Actualizo para mostrar data
