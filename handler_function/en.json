@@ -1,0 +1,14 @@
+{
+    "pregunta1": "From the following list, choose the systems you consider are affected. <br>Select the corresponding numbers, separated by commas (,).<br><br>Enter up to 4 systems, and you can indicate the same system more than once.<br>",
+    "pregunta2": "<br>To continue narrowing the search, please choose from these <b>categories</b> the one that contains the symptom you thought of. Select the corresponding number.",
+    "pregunta3": "<br>Your selection has generated a list of <b>symptoms</b>. Please review the list and select the symptom. Select the corresponding number.<br>",
+    "final_selectedsympthoms": "The selected symptoms are: <br>",
+    "final_pathologieslist": "<br>Therefore, your condition could be associated with one of the following pathologies:<br>",
+    "add_others_sympthoms": "Do you want to enter another symptom? (Yes/No)",
+    "no_more_systems": "There are no more initially selected systems.|",
+    "final_conclusion": "We suggest that you access the free platform RDiCManager at <b>https://rdcom.app</b> to continue monitoring your patient.<br><br>We invite you to share your access code with other professionals to assist them in diagnosing rare diseases.<br><br>I hope I have helped with your diagnostic orientation. Thank you very much for using <b>RDiBot</b>, have a good day.",
+    "path_count": "The number of pathologies that remain filtered is <b>{}</b>. We will continue with the questions to narrow down the search.<br>",
+    "path_count_short": "The number of pathologies that remain filtered is <b>{}</b>.<br>",
+    "show_data": "<br>Do you want to see the data? (YES/NO)",
+    "error": "There was an error, please respond again"
+}

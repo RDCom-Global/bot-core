@@ -1,0 +1,14 @@
+{
+    "pregunta1": "Da lista a seguir, escolha os sistemas que você considera afetados. <br>Marque os números correspondentes, separados por vírgulas (,).<br><br>Insira até 4 sistemas e pode indicar o mesmo mais de uma vez.<br>",
+    "pregunta2": "<br>Para continuar reduzindo a busca, por favor escolha entre essas <b>categorias</b> aquela que contém o sintoma que você pensou. Marque o número correspondente.",
+    "pregunta3": "<br>Sua seleção gerou uma lista de <b>sintomas</b>. Por favor, revise a lista e selecione o sintoma. Marque o número correspondente.<br>",
+    "final_selectedsympthoms": "Os sintomas selecionados são: <br>",
+    "final_pathologieslist": "<br>Portanto, sua condição pode estar associada a uma das seguintes patologias:<br>",
+    "add_others_sympthoms": "Deseja inserir outro sintoma? (Sim/Não)",
+    "no_more_systems": "Não há mais sistemas selecionados inicialmente.|",
+    "final_conclusion": "Sugerimos que acesse a plataforma RDiCManager, de acesso gratuito, em <b>https://rdcom.app</b> para continuar o acompanhamento do seu paciente.<br><br>Convidamos você a compartilhar seu código de acesso com outros profissionais para auxiliá-los no diagnóstico de doenças raras.<br><br>Espero ter ajudado na sua orientação diagnóstica. Muito obrigado por utilizar o <b>RDiBot</b>, tenha um bom dia.",
+    "path_count": "A quantidade de patologias que foram filtradas é <b>{}</b>, continuaremos com as perguntas para reduzir a busca.<br>",
+    "path_count_short": "A quantidade de patologias que foram filtradas é <b>{}</b>.<br>",
+    "show_data": "<br>Deseja ver os dados? (SIM/NÃO)",
+    "error": "Ocorreu um erro, por favor responda novamente"
+}
