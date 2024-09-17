@@ -7,6 +7,7 @@ logger.setLevel(logging.DEBUG)
 def lambda_handler(event,context):
     text = ""
     token = ""
+    language = ""
 
     logger.info(event)
     logger.info("Pre handler")
@@ -15,13 +16,17 @@ def lambda_handler(event,context):
     if 'body' in event:
         text = body['message']
         token = body['token']
+        language = body['language']
     else:
         text = event['message']
         token = event['token']
+        language = event['language']
 
     if token == "":
         token = None
-    language = "ES"
+        
+    if language == "":
+        language = "ES"
 
     result = handler(text, token, language)
     if isinstance(result, tuple) and len(result) == 2:

@@ -26,6 +26,40 @@ POSTGRE_DB_PASS = "RDCom2024!!"
 ENV = "lambda" 
 #ENV = "lambda"
 
+loaded_messages = None
+
+# Función que carga los archivos de idiomas solo una vez
+def load_language_files():
+    global loaded_messages
+    if loaded_messages is None:
+        try:
+            with open("es.json", "r") as f:
+                es_messages = json.load(f)
+            with open("en.json", "r") as f:
+                en_messages = json.load(f)
+            with open("po.json", "r") as f:
+                po_messages = json.load(f)
+            loaded_messages = {
+                "ES": es_messages,
+                "EN": en_messages,
+                "PO": po_messages
+            }
+            print("Archivos de idiomas cargados correctamente")
+        except FileNotFoundError as e:
+            print(f"Error al cargar archivos de idiomas: {e}")
+            loaded_messages = {
+                "es": {},
+                "en": {},
+                "po": {}
+            }
+
+# Función para obtener el mensaje según el idioma
+def get_message(lang, code):
+    load_language_files()  # Asegura que los archivos se carguen solo una vez
+    if lang in loaded_messages:
+        return loaded_messages[lang].get(code, "Mensaje no encontrado")
+    else:
+        return "Idioma no soportado"
 
 def readDB(query):
     if ENV == "local":
@@ -105,8 +139,10 @@ def check_if_token_exist(token):
         return document
     else:
         return None
-
+    
 def get_complete_question(id, language):
+    return get_message(language,id)
+    
     response = find_document_by_criteria_rdcom(id)
     
     text = ""
@@ -133,35 +169,36 @@ def list2query(list):
     except:
         print("error")
 
-def get_categories():
+def get_categories(language = "ES"):
     list_cats = []
-    rows = readDB("select cat_id, name from public.categories where type = 'system' order by 2")
+    query = "select c.cat_id, ct.value from public.categories as c inner join public.categories_translations as ct on c.cat_id = ct.cat_id where type = 'system' and ct.language = '"+ language + "' order by 2"
+    rows = readDB(query)
     return rows
 
-def get_subcategories(cat, list_pat = None):
+def get_subcategories(cat, list_pat = None, language = "ES"):
     if list_pat == None:
-        query = "select cat_id, name from public.categories where cat_id in " + \
-                "(select cat_id_2 from public.categories_categories where cat_id_1  = '" + cat + "') order by 2"
+        query = "select c.cat_id, ct.value from public.categories as c inner join public.categories_translations as ct on c.cat_id = ct.cat_id where c.cat_id in " + \
+                "(select cat_id_2 from public.categories_categories where cat_id_1  = '" + cat + "') and ct.language = '"+ language +"' order by 2"
         rows = readDB(query)
 
         if len(rows) > 0:
             return rows
     else:
-        query = "select cat_id, name from public.categories where cat_id in " + \
-                "(select cat_id_2 from public.categories_categories where cat_id_1  = '" + cat + "') and cat_id in " + \
-                "(select cat_id from public.pathologies_categories where pat_id in (" + list2query(list_pat) + ")) order by 2"
+        query = "select c.cat_id, ct.value from public.categories as c inner join public.categories_translations as ct on c.cat_id = ct.cat_id where c.cat_id in " + \
+                "(select cat_id_2 from public.categories_categories where cat_id_1  = '" + cat + "') and c.cat_id in " + \
+                "(select cat_id from public.pathologies_categories where pat_id in (" + list2query(list_pat) + ")) and ct.language = '"+ language +"' order by 2"
         rows = readDB(query)
 
         if len(rows) > 0:
             return rows
     return None
 
-def get_sympthoms_names(list_sym):
+def get_sympthoms_names(list_sym, language = "ES"):
     try:
         elementos = [f"'{item[0]}'" for item in reversed(list_sym)]
         total_sym = ','.join(elementos)
 
-        query = "select name from public.symptoms where sym_id in (" + total_sym + ")"
+        query = "select st.value from public.symptoms as s inner join public.symptoms_translations as st on s.sym_id = st.sym_id where s.sym_id in (" + total_sym + ") and st.language = '"+ language +"'"
         print("get sym",query)
 
         list_names = readDB(query)
@@ -173,7 +210,7 @@ def get_sympthoms_names(list_sym):
     except:
         return None
 
-def get_sympthoms(list_pat, list_subcat):
+def get_sympthoms(list_pat, list_subcat, language = "ES"):
 
     # Hago modificación para eliminar una primer query
     # query_1 = "select distinct pat_id from public.pathologies_categories where cat_id = '" + list_subcat[0] + \
@@ -191,7 +228,7 @@ def get_sympthoms(list_pat, list_subcat):
     query_2 = "select distinct sym_id from public.pathologies_symptoms where pat_id in (" + list2query(list_pat)
     query_2 += ") and sym_id in (select distinct sym_id from public.categories_symptoms where cat_id in ('" + subcat + "'))"
 
-    query_2_2 = "select sym_id, name from public.symptoms where sym_id in (" + query_2 + ") order by 2"
+    query_2_2 = "select s.sym_id,st.value from public.symptoms as s inner join public.symptoms_translations as st on s.sym_id = st.sym_id where s.sym_id in (" + query_2 + ") and st.language = '"+ language +"' order by 2"
     list_symp = readDB(query_2_2)
 
     if len(list_symp):
@@ -199,8 +236,7 @@ def get_sympthoms(list_pat, list_subcat):
     
     return None
 
-
-def get_pat(list_cat,list_subcat,list_sym,list_pat):
+def get_pat(list_cat,list_subcat,list_sym,list_pat, language = "ES"):
     print("list_cat",list_cat)
     print(list_subcat)
     print("list_sym",list_sym)
@@ -258,15 +294,15 @@ def get_pat(list_cat,list_subcat,list_sym,list_pat):
 
 
     # Armo query text
-    query_text = "select pat_id, name from public.pathologies where pat_id in (" + query_cat + ") " 
+    query_text = "select p.pat_id, pt.value from public.pathologies as p inner join public.pathologies_translations as pt on p.pat_id = pt.pat_id where p.pat_id in (" + query_cat + ") " 
     if list_sym != None:
         if len(list_sym) >= 1:
-            query_text += "and pat_id in ("+ query_sym +")"
+            query_text += "and p.pat_id in ("+ query_sym +")"
     if list_pat != None:
         if len(list_pat) >= 1:
-            query_text += "and pat_id in ("+ list2query(list_pat) +")"
+            query_text += "and p.pat_id in ("+ list2query(list_pat) +")"
     print(query_text)
-    query_text += " order by name"
+    query_text += " and pt.language = '" +  language + "' order by 2"
 
     # Busco y devuelvo la consulta
     list_pat = readDB(query_text)   
@@ -275,69 +311,6 @@ def get_pat(list_cat,list_subcat,list_sym,list_pat):
         return list_pat
 
     return None
-
-def get_pat_from_subcategories(list_pat, list_subcat):
-    query_1 = "select distinct pat_id from public.pathologies_categories where cat_id = '" + list_subcat[0] + \
-                            "' and pat_id in (" + list2query(list_pat) + ")"
-    query_1_2 = "select pat_id, name from public.pathologies where pat_id in (" + query_1 + ")" 
-    list_pat = readDB(query_1_2)
-    if len(list_pat) > 0:
-        return list_pat
-
-    return None
-
-def get_pat_from_subcategories_more(cats, list_subcat):
-    list_total = []
-    for cat in cats:
-        list_total.append(cat)
-
-    for subcat in list_subcat[0]:
-        list_total.append(subcat)
-    print("list total",list_total)
-    # query_1 = get_pat_from_categories(list_total)
-    query = ""
-    for i in range(len(list_total) - 1):
-        query += "select distinct pat_id from public.pathologies_categories where cat_id = '" + list_total[i] + "' and pat_id in ("
-    query += "select distinct pat_id from public.pathologies_categories where cat_id = '" + list_total[len(list_total)-1] + "'"
-    query += ")))))))))))))"[-(len(list_total)-1):]
-    # query_1 = "select distinct pat_id from public.pathologies_categories where cat_id in (" + list2query(list_subcat) + \
-    #                         ") and pat_id in (" + list2query(list_pat) + ")"
-    print("query",query)
-    query_1_2 = "select pat_id, name from public.pathologies where pat_id in (" + query + ")" 
-    list_pat = readDB(query_1_2)
-    if len(list_pat) > 0:
-        return list_pat
-
-    return None
-
-def get_pat_from_categories(list_cat):
-    query = ""
-    if len(list_cat) > 1:
-        for i in range(len(list_cat) - 1):
-            query += "select distinct pat_id from public.pathologies_categories where cat_id = '" + list_cat[i] + "' and pat_id in ("
-        query += "select distinct pat_id from public.pathologies_categories where cat_id = '" + list_cat[len(list_cat)-1] + "'"
-        query += ")))))))))))))"[-(len(list_cat)-1):]
-        list_pat = readDB(query)
-    else:
-        query = "select distinct pat_id from public.pathologies_categories where cat_id = '" + list_cat[0]
-        list_pat = readDB(query)
-
-    if len(list_pat) > 0:
-        return list_pat
-    else:
-        return None
-    
-def get_pat_from_symptoms(list_pat,sym):
-    query = ""
-    query += "select * from public.pathologies where pat_id in ( "
-    query += "select pat_id from public.pathologies_symptoms where sym_id = '" + sym[0] + "' and pat_id in (" + list2query(list_pat)
-    query += ")) order by name"
-    list_pat = readDB(query)
-
-    if len(list_pat) > 0:
-        return list_pat
-    else:
-        return None
 
 def first_question(token, language):
     # --- Insertar un elemento vacío
@@ -369,9 +342,9 @@ def first_question(token, language):
         "responses": responses 
     }
 
-    response = get_complete_question(FIRST_QUESTION, language)
+    response = get_complete_question("pregunta1", language)
 
-    options = get_categories()
+    options = get_categories(language)
     
     for i in range(len(options)):
         data = {"id": i+1, "value": str(options[i][1]), "db_id": str(options[i][0])}
@@ -401,13 +374,14 @@ def get_options_for_text(text):
     except:
         return None
     
-def show_data(data,data2show,sym):
-    response = "Los síntomas seleccionados son: <br>"
-    list_sym = get_sympthoms_names(sym)
+def show_data(data,data2show,sym, language = "ES"):
+    response = get_message(language, "final_selectedsympthoms")
+    # response = "Los síntomas seleccionados son: <br>"
+    list_sym = get_sympthoms_names(sym, language)
     for sym in list_sym:
         response += "<b>. " + sym[0] + "</b><br>"
 
-    response += "<br>Por lo tanto su condición se podría asociar a alguna de las siguientes patologías:<br>"
+    response += get_message(language, "final_pathologieslist")
     if data2show == "pat":
         for x in data["pat"]:
             response += "<b>. " + x[1] + "</b><br>"
@@ -448,9 +422,10 @@ def sort_cats(list_cat):
     
     return None
 
-def get_name_cat(cat_id):
+def get_name_cat(cat_id, language = "ES"):
     try:
         query = "select name from public.categories where cat_id = '"+ cat_id + "'"
+        query = "select ct.value from public.categories as c inner join public.categories_translations as ct on c.cat_id = ct.cat_id where c.cat_id = '"+ cat_id + "' and ct.language = '"+ language +"'"
     
         rows = readDB(query)
         
@@ -583,14 +558,14 @@ def middle_question(text, token, language):
 
         #obtengo la ultima pregunta para saber que tipo de pregunta tengo que mostrar
         last_question = response_saved["last_question"]
-        list_of_yesoptions = ["si","Sí","Si","sí","yes","sep","sip"]
+        list_of_yesoptions = ["si","Sí","Si","sí","yes","sep","sip","Yes", "YES","Y","y","S","s","Sim","SIM"]
 
         if response_saved["show_data"] == "true":
             if selected_options[0] in list_of_yesoptions:
-                response = show_data(response_saved["data"],response_saved["data_2_show"],response_saved["data"]["sym"])
-                response += "<br>Desea ingresar otro síntoma? (Si/No)"
+                response = show_data(response_saved["data"],response_saved["data_2_show"],response_saved["data"]["sym"], language)
+                response += "<br>" + get_message(language, "add_others_sympthoms")
             else:
-                response = "Desea ingresar otro síntoma? (Si/No)"
+                response = get_message(language, "add_others_sympthoms")
             query = { "user_id": token}
             update = {"$set": {"show_data": "moredata", "data_2_show": ""}}
             result = collection.update_one(query, update)
@@ -602,8 +577,8 @@ def middle_question(text, token, language):
                 list_cats = response_saved["data"]["cat"]
                 actual_cat_position = response_saved["data"]["next_cat"]
                 if actual_cat_position > len(list_cats)-1:
-                    responseText = "Ya no hay más sistemas seleccionados inicialmente.|"
-                    responseText += "Le sugerimos que ingrese a la plataforma RDiCManager, de acceso gratuito, en <b>https://rdcom.app</b> para continuar el seguimiento de su paciente.<br><br>Lo invitamos a compartir su código de acceso con otros profesionales para asistirlos en sus diagnósticos de enfermedades raras.<br><br>Espero haberle ayudado en su orientación diagnóstica. Muchas gracias por haber utilizado el <b>RDiBot</b>, que termine bien su día"
+                    responseText = get_message(language, "no_more_systems")
+                    responseText += get_message(language, "final_conclusion")
                     return responseText
                 
                 actual_cat = list_cats[actual_cat_position]
@@ -615,13 +590,13 @@ def middle_question(text, token, language):
                 result = collection.update_one(query, update)
             
                 # list_subcats = get_subcategories_from_cats_and_pats(actual_cat, response_saved["data"]["pat"])
-                list_subcats = get_subcategories(actual_cat, response_saved["data"]["pat"])
+                list_subcats = get_subcategories(actual_cat, response_saved["data"]["pat"], language)
 
 
                 ##Agrego nombre de la cateogira que voy a mostrar
               
                 response = get_complete_question("pregunta2", language)
-                response += "<br><br><b>" + get_name_cat(actual_cat) + "</b><br>"
+                response += "<br><br><b>" + get_name_cat(actual_cat, language) + "</b><br>"
             
                 ques_options = []
                 question = {"question_id": "pregunta2", "options": ques_options}
@@ -640,7 +615,7 @@ def middle_question(text, token, language):
                 update = {"$set": {"last_question": "pregunta2"}}
                 result = collection.update_one(query, update)                           
             else:
-                response = "Le sugerimos que ingrese a la plataforma RDiCManager, de acceso gratuito, en <b>https://rdcom.app</b> para continuar el seguimiento de su paciente.<br><br>Lo invitamos a compartir su código de acceso con otros profesionales para asistirlos en sus diagnósticos de enfermedades raras.<br><br>Espero haberle ayudado en su orientación diagnóstica. Muchas gracias por haber utilizado el <b>RDiBot</b>, que termine bien su día"
+                response = get_message(language, "final_conclusion")
             query = { "user_id": token}
             update = {"$set": {"show_data": "false", "data_2_show": ""}}
             result = collection.update_one(query, update)
@@ -671,17 +646,18 @@ def middle_question(text, token, language):
 
             # Busco y guardo las patologias
             #list_pat = get_pat_from_categories(rta_selected) #0609MOD
-            list_pat = get_pat(rta_selected,None,None,None)
+            list_pat = get_pat(rta_selected,None,None,None,language)
 
             query = {"user_id": token}
             update = {"$set": {f"data.pat": list_pat}}
             result = collection.update_one(query, update)
-            response = "La cantidad de patologias que quedan filtradas son <b>{}</b>, continuaremos con las consultas para reducir la búsqueda.<br>".format(len(list_pat))
+            response = get_message(language,"path_count").format(len(list_pat))
+            # response = "La cantidad de patologias que quedan filtradas son <b>{}</b>, continuaremos con las consultas para reducir la búsqueda.<br>".format(len(list_pat))
 
             # Busco las sub cat de la cat seleciconada y preparo la pregunta para usuario
-            list_subcats = get_subcategories(list_cats[0])
+            list_subcats = get_subcategories(list_cats[0], None, language)
             response += get_complete_question("pregunta2", language)
-            response += "<br><br><b>" + get_name_cat(list_cats[0]) + "</b><br>"
+            response += "<br><br><b>" + get_name_cat(list_cats[0],language) + "</b><br>"
 
             try: 
                 ques_options = []
@@ -729,17 +705,18 @@ def middle_question(text, token, language):
             # Busco y guardo las patologias (segun la sub cat seleccionada y las pat)
             #list_pat = get_pat_from_subcategories(response_saved["data"]["pat"],rta_selected) #0609MOD
             response_saved = find_response_by_user(token)
-            list_pat = get_pat(response_saved["data"]["cat"],response_saved["data"]["sub_cat"],response_saved["data"]["sym"],response_saved["data"]["pat"])
+            list_pat = get_pat(response_saved["data"]["cat"],response_saved["data"]["sub_cat"],response_saved["data"]["sym"],response_saved["data"]["pat"], language)
 
             query = {"user_id": token}
             update = {"$set": {f"data.pat": list_pat}}
             result = collection.update_one(query, update)
-            response = "La cantidad de patologias que quedan filtradas son <b>{}</b>, continuaremos con las consultas para reducir la búsqueda.<br>".format(len(list_pat))
+            response = get_message(language,"path_count").format(len(list_pat))
+            # response = "La cantidad de patologias que quedan filtradas son <b>{}</b>, continuaremos con las consultas para reducir la búsqueda.<br>".format(len(list_pat))
    
             # Busco los síntomas de la cat seleciconada y preparo la pregunta para usuario
             print("llego a buscar sintomas")
             response_saved = find_response_by_user(token)
-            list_syms = get_sympthoms(response_saved["data"]["pat"],response_saved["data"]["sub_cat"])
+            list_syms = get_sympthoms(response_saved["data"]["pat"],response_saved["data"]["sub_cat"],language)
             response += get_complete_question("pregunta3", language)
             ques_options = []
             question = {"question_id": "pregunta3", "options": ques_options}
@@ -786,14 +763,15 @@ def middle_question(text, token, language):
             # Busco y guardo las patologias (segun el síntoma mencionado y las pat)
             response_saved = find_response_by_user(token)
             # list_pat = get_pat_from_symptoms(response_saved["data"]["pat"],response_saved["data"]["sub_cat"],rta_selected,response_saved["data"]["pat"]) #0609MOD
-            list_pat = get_pat(response_saved["data"]["cat"],response_saved["data"]["sub_cat"],response_saved["data"]["sym"],response_saved["data"]["pat"])
+            list_pat = get_pat(response_saved["data"]["cat"],response_saved["data"]["sub_cat"],response_saved["data"]["sym"],response_saved["data"]["pat"], language)
 
             query = {"user_id": token}
             update = {"$set": {f"data.pat": list_pat}}
             result = collection.update_one(query, update)
-            response = "La cantidad de patologias que quedan filtradas son <b>{}</b>.<br>".format(len(list_pat))
-            response += "<br>Desea ver los datos? (SI/NO)"
-
+            response = get_message(language,"path_count_short").format(len(list_pat))
+            # response = "La cantidad de patologias que quedan filtradas son <b>{}</b>.<br>".format(len(list_pat))
+            response += get_message(language, "show_data")
+            
             #Actualizo para mostrar data
             query = { "user_id": token}
             update = {"$set": {"show_data": "true", "data_2_show": "pat"}}
@@ -816,7 +794,7 @@ def middle_question(text, token, language):
         return "ok"
     except Exception as e:
         print(e)
-        return "Hubo un error, por favor responda nuevamente"
+        return get_message(language, "error")
 
 def handler(texto, token, language):
     if token is None:
