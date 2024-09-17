@@ -548,7 +548,7 @@ def middle_question(text, token, language):
         response_saved = find_response_by_user(token)
 
          ## CODIGO PARA VOLVER ATRAS
-        if text == "atras":
+        if text == "atras" or text == "back" or text == "voltar":
             return back(response_saved["questions"],token, response_saved["responses"],language, response_saved["data"]["cat"], response_saved["data"]["sub_cat"],response_saved["data"]["sym"],response_saved["data"]["pat"])
         
         #Guardo las responses
