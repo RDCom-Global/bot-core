@@ -1,7 +1,7 @@
 {
     "pregunta1": "From the following list, choose the systems you consider are affected. <br>Select the corresponding numbers, separated by commas (,).<br><br>Enter up to 4 systems, and you can indicate the same system more than once.<br>",
     "pregunta2": "<br>To continue narrowing the search, please choose from these <b>categories</b> the one that contains the symptom you thought of. Select the corresponding number.",
-    "pregunta3": "<br>Your selection has generated a list of <b>symptoms</b>. Please review the list and select the symptom. Select the corresponding number.<br>",
+    "pregunta3": "<br>Your selection has resulted in a list of <b>symptoms</b>. Please review the list and select the symptom. Mark the corresponding number.<br>If you did not find your symptom in this list, we suggest you type 'back' and choose another symptom from another category of your condition to help reach a diagnosis.<br>",
     "final_selectedsympthoms": "The selected symptoms are: <br>",
     "final_pathologieslist": "<br>Therefore, your condition could be associated with one of the following pathologies:<br>",
     "add_others_sympthoms": "Do you want to enter another symptom? (Yes/No)",

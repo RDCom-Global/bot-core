@@ -1,7 +1,7 @@
 {
     "pregunta1": "Da lista a seguir, escolha os sistemas que você considera afetados. <br>Marque os números correspondentes, separados por vírgulas (,).<br><br>Insira até 4 sistemas e pode indicar o mesmo mais de uma vez.<br>",
     "pregunta2": "<br>Para continuar reduzindo a busca, por favor escolha entre essas <b>categorias</b> aquela que contém o sintoma que você pensou. Marque o número correspondente.",
-    "pregunta3": "<br>Sua seleção gerou uma lista de <b>sintomas</b>. Por favor, revise a lista e selecione o sintoma. Marque o número correspondente.<br>",
+    "pregunta3": "<br>Sua seleção resultou em uma lista de <b>sintomas</b>. Por favor, revise a lista e selecione o sintoma. Marque o número correspondente.<br>Se você não encontrou seu sintoma nesta lista, sugerimos que escreva 'voltar' e escolha outro sintoma de outra categoria da sua patologia para ajudar a chegar ao diagnóstico.<br>",
     "final_selectedsympthoms": "Os sintomas selecionados são: <br>",
     "final_pathologieslist": "<br>Portanto, sua condição pode estar associada a uma das seguintes patologias:<br>",
     "add_others_sympthoms": "Deseja inserir outro sintoma? (Sim/Não)",

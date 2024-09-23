@@ -257,8 +257,17 @@ def get_pat(list_cat,list_subcat,list_sym,list_pat, language = "ES"):
 
     if list_subcat != None:
         for subcat in list_subcat:
-            print("sub cat",subcat[0])
-            list_total.append(subcat[0])
+            print("sub cat", subcat[0] if isinstance(subcat, list) else subcat)
+            if isinstance(subcat, list):
+                if isinstance(subcat[0],list):
+                    print("is listlist",subcat[0][0])
+                    list_total.append(subcat[0][0]) 
+                else:
+                    print("is list")
+                    list_total.append(subcat[0]) 
+            else:
+                print("is not list")
+                list_total.append(subcat)
     
     print("list total",list_total)
     query_cat = ""
@@ -280,8 +289,26 @@ def get_pat(list_cat,list_subcat,list_sym,list_pat, language = "ES"):
 
             list_sym_final = []
             for sym in list_sym:
-                list_sym_final.append(sym[0])
+                if isinstance(sym, list):
+                    if len(sym) == 0:
+                        # Si es una lista pero está vacía, no hacer nada
+                        print("Sym is an empty list, skipping...")
+                        continue
+                    if isinstance(sym[0], list):
+                        if len(sym[0]) == 0:
+                            # Si la sublista también está vacía, no hacer nada
+                            print("Sym[0] is an empty list, skipping...")
+                            continue
+                        print("Sym is listlist", sym[0][0])
+                        list_sym_final.append(sym[0][0])
+                    else:
+                        print("Sym is list")
+                        list_sym_final.append(sym[0])
+                else:
+                    print("Sym is not list")
+                    list_sym_final.append(sym)
             print("list sym total", list_sym_final)
+
             if len(list_sym_final) > 1:
                 for i in range(len(list_sym_final) - 1):
                     query_sym += "select distinct pat_id from public.pathologies_symptoms where sym_id = '" + list_sym_final[i] + "' and pat_id in ("
