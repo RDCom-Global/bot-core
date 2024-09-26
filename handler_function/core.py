@@ -171,14 +171,14 @@ def list2query(list):
 
 def get_categories(language = "ES"):
     list_cats = []
-    query = "select c.cat_id, ct.value from public.categories as c inner join public.categories_translations as ct on c.cat_id = ct.cat_id where type = 'system' and ct.language = '"+ language + "' order by 2"
+    query = "select c.cat_id, ct.value from public.categories as c inner join public.categories_translations as ct on c.cat_id = ct.cat_id where type = 'system' and ct.language = '"+ language + "'  AND ct.state = 'bot_verified' order by 2"
     rows = readDB(query)
     return rows
 
 def get_subcategories(cat, list_pat = None, language = "ES"):
     if list_pat == None:
         query = "select c.cat_id, ct.value from public.categories as c inner join public.categories_translations as ct on c.cat_id = ct.cat_id where c.cat_id in " + \
-                "(select cat_id_2 from public.categories_categories where cat_id_1  = '" + cat + "') and ct.language = '"+ language +"' order by 2"
+                "(select cat_id_2 from public.categories_categories where cat_id_1  = '" + cat + "') and ct.language = '"+ language +"' AND ct.state = 'bot_verified' order by 2"
         rows = readDB(query)
 
         if len(rows) > 0:
@@ -186,7 +186,7 @@ def get_subcategories(cat, list_pat = None, language = "ES"):
     else:
         query = "select c.cat_id, ct.value from public.categories as c inner join public.categories_translations as ct on c.cat_id = ct.cat_id where c.cat_id in " + \
                 "(select cat_id_2 from public.categories_categories where cat_id_1  = '" + cat + "') and c.cat_id in " + \
-                "(select cat_id from public.pathologies_categories where pat_id in (" + list2query(list_pat) + ")) and ct.language = '"+ language +"' order by 2"
+                "(select cat_id from public.pathologies_categories where pat_id in (" + list2query(list_pat) + ")) and ct.language = '"+ language +"' AND ct.state = 'bot_verified' order by 2"
         rows = readDB(query)
 
         if len(rows) > 0:
@@ -198,7 +198,7 @@ def get_sympthoms_names(list_sym, language = "ES"):
         elementos = [f"'{item[0]}'" for item in reversed(list_sym)]
         total_sym = ','.join(elementos)
 
-        query = "select st.value from public.symptoms as s inner join public.symptoms_translations as st on s.sym_id = st.sym_id where s.sym_id in (" + total_sym + ") and st.language = '"+ language +"'"
+        query = "select st.value from public.symptoms as s inner join public.symptoms_translations as st on s.sym_id = st.sym_id where s.sym_id in (" + total_sym + ") and st.language = '"+ language +"'  AND s.state = 'bot_verified'"
         print("get sym",query)
 
         list_names = readDB(query)
@@ -226,9 +226,9 @@ def get_sympthoms(list_pat, list_subcat, language = "ES"):
         subcat = list_subcat[0][0]
 
     query_2 = "select distinct sym_id from public.pathologies_symptoms where pat_id in (" + list2query(list_pat)
-    query_2 += ") and sym_id in (select distinct sym_id from public.categories_symptoms where cat_id in ('" + subcat + "'))"
+    query_2 += ") and sym_id in (select distinct sym_id from public.categories_symptoms where cat_id in ('" + subcat + "'))  AND state = 'bot_verified'"
 
-    query_2_2 = "select s.sym_id,st.value from public.symptoms as s inner join public.symptoms_translations as st on s.sym_id = st.sym_id where s.sym_id in (" + query_2 + ") and st.language = '"+ language +"' order by 2"
+    query_2_2 = "select s.sym_id,st.value from public.symptoms as s inner join public.symptoms_translations as st on s.sym_id = st.sym_id where s.sym_id in (" + query_2 + ") and st.language = '"+ language +"' AND s.state = 'bot_verified' order by 2"
     list_symp = readDB(query_2_2)
 
     if len(list_symp):
@@ -276,8 +276,9 @@ def get_pat(list_cat,list_subcat,list_sym,list_pat, language = "ES"):
             query_cat += "select distinct pat_id from public.pathologies_categories where cat_id = '" + list_total[i] + "' and pat_id in ("
         query_cat += "select distinct pat_id from public.pathologies_categories where cat_id = '" + list_total[len(list_total)-1] + "'"
         query_cat += ")))))))))))))"[-(len(list_total)-1):]
+        query_cat += " AND state = 'bot_verified'"
     else: 
-        query_cat = "select distinct pat_id from public.pathologies_categories where cat_id = '" + list_total[0] + "'"
+        query_cat = "select distinct pat_id from public.pathologies_categories where cat_id = '" + list_total[0] + "' AND state = 'bot_verified'"
     print("query cat",query_cat)
 
     # Query Sym
@@ -314,8 +315,9 @@ def get_pat(list_cat,list_subcat,list_sym,list_pat, language = "ES"):
                     query_sym += "select distinct pat_id from public.pathologies_symptoms where sym_id = '" + list_sym_final[i] + "' and pat_id in ("
                 query_sym += "select distinct pat_id from public.pathologies_symptoms where sym_id = '" + list_sym_final[len(list_sym_final)-1] + "'"
                 query_sym += ")))))))))))))"[-(len(list_sym_final)-1):]
+                query_sym += "  AND state = 'bot_verified'"
             else:
-                query_sym = "select distinct pat_id from public.pathologies_symptoms where sym_id = '" + list_sym_final[0] + "'"
+                query_sym = "select distinct pat_id from public.pathologies_symptoms where sym_id = '" + list_sym_final[0] + "' AND state = 'bot_verified'"
         
     print("query sym", query_sym)
 
@@ -329,7 +331,7 @@ def get_pat(list_cat,list_subcat,list_sym,list_pat, language = "ES"):
         if len(list_pat) >= 1:
             query_text += "and p.pat_id in ("+ list2query(list_pat) +")"
     print(query_text)
-    query_text += " and pt.language = '" +  language + "' order by 2"
+    query_text += " and pt.language = '" +  language + "' AND p.state = 'bot_verified' order by 2"
 
     # Busco y devuelvo la consulta
     list_pat = readDB(query_text)   
@@ -423,7 +425,7 @@ def sort_cats(list_cat):
     
     list = []
     for cat in list_cat:
-        query = "select cat_id, count(0) from public.categories_symptoms where cat_id = '" + cat + "' group by cat_id order by 2"
+        query = "select cat_id, count(0) from public.categories_symptoms where cat_id = '" + cat + "' AND state = 'bot_verified' group by cat_id order by 2"
         rows = readDB(query)
         list.append(rows)
     
@@ -437,7 +439,7 @@ def sort_cats(list_cat):
         return flat_list
     
     #Old code
-    query = "select cat_id, count(0) from public.categories_symptoms where cat_id in (" + cats + ") group by cat_id order by 2"
+    query = "select cat_id, count(0) from public.categories_symptoms where cat_id in (" + cats + ") AND state = 'bot_verified' group by cat_id order by 2"
     rows = readDB(query)
 
     for cat in rows:
@@ -451,8 +453,8 @@ def sort_cats(list_cat):
 
 def get_name_cat(cat_id, language = "ES"):
     try:
-        query = "select name from public.categories where cat_id = '"+ cat_id + "'"
-        query = "select ct.value from public.categories as c inner join public.categories_translations as ct on c.cat_id = ct.cat_id where c.cat_id = '"+ cat_id + "' and ct.language = '"+ language +"'"
+        query = "select name from public.categories where cat_id = '"+ cat_id + "' AND state = 'bot_verified'"
+        query = "select ct.value from public.categories as c inner join public.categories_translations as ct on c.cat_id = ct.cat_id where c.cat_id = '"+ cat_id + "' and ct.language = '"+ language +"' AND c.state = 'bot_verified'"
     
         rows = readDB(query)
         
@@ -585,7 +587,7 @@ def middle_question(text, token, language):
 
         #obtengo la ultima pregunta para saber que tipo de pregunta tengo que mostrar
         last_question = response_saved["last_question"]
-        list_of_yesoptions = ["si","Sí","Si","sí","yes","sep","sip","Yes", "YES","Y","y","S","s","Sim","SIM"]
+        list_of_yesoptions = ["si","Sí","Si","sí","yes","sep","sip","Yes", "YES","Y","y","S","s","Sim","SIM","sim"]
 
         if response_saved["show_data"] == "true":
             if selected_options[0] in list_of_yesoptions:
