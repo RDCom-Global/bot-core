@@ -72,3 +72,21 @@ Resources:
             RestApiId: !Ref MyApi
             Path: /login
             Method: post
+
+  ValidateMail:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: validate_mail/
+      Handler: app.lambda_handler
+      Runtime: python3.11
+      Layers:
+        - arn:aws:lambda:us-east-1:293854028872:layer:layer_postgre_prod:4
+      Architectures:
+        - x86_64
+      Events:
+        BotCore:
+          Type: Api 
+          Properties:
+            RestApiId: !Ref MyApi
+            Path: /validatemail
+            Method: post

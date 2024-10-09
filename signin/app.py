@@ -2,6 +2,12 @@ import logging,json
 import psycopg2
 import postgre
 import bcrypt
+import smtplib
+import secrets
+import string
+from datetime import datetime
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -69,7 +75,7 @@ def signin(mail, password, id, code):
             }
         
         # Valido que el usuario no exista
-        check_user= "select * from public.users_bot where mail = '" + mail + "' OR id = '" + id + "'"
+        check_user= "select * from public.users_bot where mail = '" + mail + "'"
         user = readDB(check_user)
         if len(user) >= 1:
             return {
@@ -79,18 +85,20 @@ def signin(mail, password, id, code):
                     "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
                     "Access-Control-Allow-Methods": "OPTIONS,POST"
                 },
-                "body": json.dumps("El mail o el id, ya se encuentran registrados en nuestra base de datos"),
+                "body": json.dumps("El mail ya se encuentran registrados en nuestra base de datos"),
             }
         
         # Hago el insert
         try:
             hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            token = token_generator()
             queries = []
-            queries.append("INSERT INTO public.users_bot VALUES ('" + mail + "', '" + hashed_password + "', '" + id + "', '" + licences[0][0] + "');")
+            queries.append("INSERT INTO public.users_bot VALUES ('" + mail + "', '" + hashed_password + "', '" + id + "', '" + licences[0][0] + "','pending','"+ token +"','"+ datetime.now().strftime("%Y-%m-%d %H:%M:%S")+"');")
             queries.append("update public.companies set licences = licences - 1 where company_id = '" + licences[0][0] + "';")
             tran = True
-            for query in queries:
-                tran = insertDB(query)
+            if send_email(mail,"RDiBot - Validación de Correo","Por favor, confirme su mail haciendo click en el siguiente link: https://rdibot.rdcom.app/validatemail?token=" + token + "&mail=" + mail):
+                for query in queries:
+                    tran = insertDB(query)
             if tran:
                 return {
                     "statusCode": 201,
@@ -109,6 +117,45 @@ def signin(mail, password, id, code):
     except:
         return None
     
+def token_generator():
+    # Define los caracteres que se pueden usar en el token
+    caracteres = string.ascii_letters + string.digits
+    # Genera un token aleatorio de la longitud especificada
+    token = ''.join(secrets.choice(caracteres) for _ in range(16))
+    return token
+    
+def send_email(recipient, subject, body):
+    # Variables de entorno
+    smtp_server = "smtp.gmail.com"
+    smtp_port = 587
+    smtp_user = "it@rdcom.global"
+    smtp_password = "nbftolgmfyqystqy"
+
+    # Configuración del correo
+    msg = MIMEMultipart()
+    msg['From'] = "RDiBot"
+    msg['To'] = recipient
+    msg['Subject'] = subject
+
+    # Cuerpo del correo
+    msg.attach(MIMEText(body, 'plain'))
+
+    try:
+        # Configuración del servidor SMTP
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.ehlo()
+        server.starttls()  # Inicia TLS
+        server.ehlo()
+        server.login(smtp_user, smtp_password)
+        
+        # Envío del correo
+        server.sendmail(smtp_user, recipient, msg.as_string())
+        server.quit()
+
+        return True
+    except Exception as e:
+        print(f"Error al enviar correo: {e}")
+        return False  
 
 def readDB(query):
     if ENV == "local":

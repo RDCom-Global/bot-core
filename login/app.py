@@ -51,7 +51,7 @@ def lambda_handler(event,context):
 def login(mail, password):
     try:
         # Valido que el usuario exista
-        check_user= "select password from public.users_bot where mail = '" + mail + "'"
+        check_user= "select password from public.users_bot where mail = '" + mail + "' and status = 'active'"
         print(check_user)
         user = readDB(check_user)
         if len(user) >= 1:
