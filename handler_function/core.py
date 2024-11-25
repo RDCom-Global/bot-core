@@ -341,7 +341,7 @@ def get_pat(list_cat,list_subcat,list_sym,list_pat, language = "ES"):
 
     return None
 
-def first_question(token, language):
+def first_question(token, language, mail):
     # --- Insertar un elemento vacío
     client = MongoClient(MONGO_DB_PATH)
     db = client[MONGO_DB_NAME]  # Replace 'your_database' with your database name
@@ -362,6 +362,7 @@ def first_question(token, language):
 
     mydict = { 
         "user_id": token, 
+        "user_mail": mail,
         "date": datetime.datetime.now(), 
         "data": first_layer, 
         "last_question": "pregunta1", 
@@ -825,7 +826,7 @@ def middle_question(text, token, language):
         print(e)
         return get_message(language, "error")
 
-def handler(texto, token, language):
+def handler(texto, token, language, mail = ""):
     if token is None:
         token = secrets.token_hex(20)
 
@@ -836,10 +837,10 @@ def handler(texto, token, language):
         else:
             token = secrets.token_hex(20)
             print("FirstQuestion")
-            return first_question(token, language), token
+            return first_question(token, language, mail), token
     else:
         
-        return first_question(token, language), token
+        return first_question(token, language, mail), token
 
 def check_token(token):
     response_saved = find_response_by_user(token)
