@@ -17,10 +17,13 @@ def lambda_handler(event,context):
         text = body['message']
         token = body['token']
         language = body['language']
+        mail = body['mail']
+       
     else:
         text = event['message']
         token = event['token']
         language = event['language']
+        mail = event['mail']
 
     if token == "":
         token = None
@@ -28,7 +31,7 @@ def lambda_handler(event,context):
     if language == "":
         language = "ES"
 
-    result = handler(text, token, language)
+    result = handler(text, token, language, mail)
     if isinstance(result, tuple) and len(result) == 2:
         response, new_token = result
     else:

@@ -60,10 +60,17 @@ def lambda_handler(event,context):
 
 def signin(mail, password, id, code):
     try:
+        print("llego a signin")
+        
         # Valido que el código tenga licencias disponibles
-        check_code = "select company_id from public.companies where code = '" + code + "' and licences > 0"
+        check_code = "select company_id, licences from public.companies where code = '" + code + "' and licences > 0"
+        print("query licences", check_code)
+
         licences = readDB(check_code)
-        if len(licences) <= 0:
+        
+        print("query licences", licences)
+        
+        if licences[0][1] <= 0:
             return {
                 "statusCode": 402,
                 "headers": {
@@ -74,6 +81,7 @@ def signin(mail, password, id, code):
                 "body": json.dumps("El código ingresado no tiene más licencias disponibles"),
             }
         
+        print("paso check licencias")
         # Valido que el usuario no exista
         check_user= "select * from public.users_bot where mail = '" + mail + "'"
         user = readDB(check_user)
@@ -157,7 +165,8 @@ def send_email(recipient, subject, body):
         print(f"Error al enviar correo: {e}")
         return False  
 
-def readDB(query):
+def readDB(query, params = {}):
+    print("llego a read DB")
     if ENV == "local":
         # Establecer la conexión con la base de datos
         conn = psycopg2.connect(
@@ -172,7 +181,10 @@ def readDB(query):
         cur = conn.cursor()
 
         # Ejecutar una consulta de lectura
-        cur.execute(query)
+        if params:
+            cur.execute(query,params)
+        else:
+            cur.execute(query)
 
         # Obtener los resultados de la consulta
         rows = cur.fetchall()
@@ -185,7 +197,9 @@ def readDB(query):
         cur.close()
         conn.close()
     else:
+        print("hace la query")
         rows = postgre.query_postgresql(query)
+        print("Result query",rows)
 
     return rows
 
