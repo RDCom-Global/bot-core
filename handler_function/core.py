@@ -652,6 +652,7 @@ def middle_question(text, token, language):
             if response:
                 return response
 
+        #pregunto subcat
         if last_question == "pregunta1":
             rta_selected = []
             last_options = []
@@ -711,7 +712,8 @@ def middle_question(text, token, language):
             
             if result:
                 return response
-            
+        
+        #elije sintoma    
         if last_question == "pregunta2":
             print("Pregunta 2")
             rta_selected = []
@@ -770,6 +772,7 @@ def middle_question(text, token, language):
             if result:
                 return response
         
+        #ve patologias
         if last_question == "pregunta3":
             print("Pregunta3")
             rta_selected = []
