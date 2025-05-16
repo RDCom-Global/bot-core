@@ -602,7 +602,7 @@ def middle_question(text, token, language):
                 update = {"$set": {"diagnosis": "false"}}
                 result = collection.update_one(query, update)
     
-            return get_message(language, "preguntafinal")
+            return get_message(language, "final_conclusion")
 
         if response_saved["show_data"] == "true":
             if selected_options[0] in list_of_yesoptions:
@@ -628,6 +628,7 @@ def middle_question(text, token, language):
                     
                     responseText = get_message(language, "no_more_systems")
                     responseText +=  get_message(language, "preguntafinal")
+                    # responseText += get_message(language, "final_conclusion")
                     return responseText
                 
                 actual_cat = list_cats[actual_cat_position]
@@ -670,7 +671,7 @@ def middle_question(text, token, language):
                 result = collection.update_one(query, update)
                 
                 #response = get_message(language, "final_conclusion")
-                response = get_message(language, "preguntafinal")
+                response =  get_message(language, "preguntafinal")
                 
             query = { "user_id": token}
             update = {"$set": {"show_data": "false", "data_2_show": ""}}
