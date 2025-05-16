@@ -17,9 +17,11 @@ lint = true
 capabilities = "CAPABILITY_IAM"
 confirm_changeset = true
 resolve_s3 = true
-s3_prefix = "bot-core"
+s3_prefix = "bot-core-dev"
 region = "us-east-1"
 image_repositories = []
+stack_name = "bot-core-dev"
+parameter_overrides = "Environment=\"dev\""
 
 [default.package.parameters]
 resolve_s3 = true

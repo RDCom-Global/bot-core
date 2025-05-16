@@ -8,6 +8,10 @@ Globals:
   Function:
     Timeout: 300
 
+Parameters:
+  Environment:
+    Type: String
+
 Resources:
   MyApi:
     Type: AWS::Serverless::Api
@@ -22,6 +26,7 @@ Resources:
   BotCore:
     Type: AWS::Serverless::Function 
     Properties:
+      FunctionName: !Join ["", ["bot-", !Ref Environment, "-botcore"]]
       CodeUri: handler_function/
       Handler: app.lambda_handler
       Runtime: python3.11
@@ -40,6 +45,7 @@ Resources:
   SignIn:
     Type: AWS::Serverless::Function 
     Properties:
+      FunctionName: !Join ["", ["bot-", !Ref Environment, "-signin"]]
       CodeUri: signin/
       Handler: app.lambda_handler
       Runtime: python3.11
@@ -58,6 +64,7 @@ Resources:
   LogIn:
     Type: AWS::Serverless::Function 
     Properties:
+      FunctionName: !Join ["", ["bot-", !Ref Environment, "-login"]]
       CodeUri: login/
       Handler: app.lambda_handler
       Runtime: python3.11
@@ -76,6 +83,7 @@ Resources:
   ValidateMail:
     Type: AWS::Serverless::Function 
     Properties:
+      FunctionName: !Join ["", ["bot-", !Ref Environment, "-validatemail"]]
       CodeUri: validate_mail/
       Handler: app.lambda_handler
       Runtime: python3.11

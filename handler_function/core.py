@@ -368,8 +368,9 @@ def first_question(token, language, mail):
         "last_question": "pregunta1", 
         "show_data": "false", 
         "data_2_show": "",
+        "diagnosis": "false",
         "questions": questions,
-        "responses": responses 
+        "responses": responses
     }
 
     response = get_complete_question("pregunta1", language)
@@ -589,6 +590,19 @@ def middle_question(text, token, language):
         #obtengo la ultima pregunta para saber que tipo de pregunta tengo que mostrar
         last_question = response_saved["last_question"]
         list_of_yesoptions = ["si","Sí","Si","sí","yes","sep","sip","Yes", "YES","Y","y","S","s","Sim","SIM","sim"]
+        
+        #Agregado de nueva seccion de ultima pregunta
+        if response_saved["diagnosis"] == "ask":
+            if selected_options[0] in list_of_yesoptions:
+                query = { "user_id": token}
+                update = {"$set": {"diagnosis": "true"}}
+                result = collection.update_one(query, update)
+            else:
+                query = { "user_id": token}
+                update = {"$set": {"diagnosis": "false"}}
+                result = collection.update_one(query, update)
+    
+            return get_message(language, "preguntafinal")
 
         if response_saved["show_data"] == "true":
             if selected_options[0] in list_of_yesoptions:
@@ -607,8 +621,13 @@ def middle_question(text, token, language):
                 list_cats = response_saved["data"]["cat"]
                 actual_cat_position = response_saved["data"]["next_cat"]
                 if actual_cat_position > len(list_cats)-1:
+                    #Agregado 1205 - se agrega un paso más con la pregunta si llego al diagnostico
+                    query = { "user_id": token}
+                    update = {"$set": {"diagnosis": "ask"}}
+                    result = collection.update_one(query, update)
+                    
                     responseText = get_message(language, "no_more_systems")
-                    responseText += get_message(language, "final_conclusion")
+                    responseText +=  get_message(language, "preguntafinal")
                     return responseText
                 
                 actual_cat = list_cats[actual_cat_position]
@@ -645,7 +664,14 @@ def middle_question(text, token, language):
                 update = {"$set": {"last_question": "pregunta2"}}
                 result = collection.update_one(query, update)                           
             else:
-                response = get_message(language, "final_conclusion")
+                #Agregado 1205 - se agrega un paso más con la pregunta si llego al diagnostico
+                query = { "user_id": token}
+                update = {"$set": {"diagnosis": "ask"}}
+                result = collection.update_one(query, update)
+                
+                #response = get_message(language, "final_conclusion")
+                response = get_message(language, "preguntafinal")
+                
             query = { "user_id": token}
             update = {"$set": {"show_data": "false", "data_2_show": ""}}
             result = collection.update_one(query, update)
